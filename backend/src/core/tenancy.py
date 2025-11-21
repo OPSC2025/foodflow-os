@@ -332,3 +332,44 @@ async def get_tenant_from_token(token_payload: dict) -> str:
     
     return tenant_schema
 
+
+# ContextVar for tenant isolation
+from contextvars import ContextVar
+
+_current_tenant_schema: ContextVar[Optional[str]] = ContextVar("current_tenant_schema", default=None)
+_current_tenant_id: ContextVar[Optional[uuid.UUID]] = ContextVar("current_tenant_id", default=None)
+
+
+def set_tenant_in_context(tenant_id: Optional[uuid.UUID], tenant_schema: Optional[str]) -> None:
+    """
+    Set the current tenant context for the request.
+    
+    This should be called by the tenant isolation middleware.
+    
+    Args:
+        tenant_id: UUID of the tenant
+        tenant_schema: Schema name of the tenant
+    """
+    _current_tenant_id.set(tenant_id)
+    _current_tenant_schema.set(tenant_schema)
+
+
+def get_tenant_from_context() -> Optional[str]:
+    """
+    Get the current tenant schema from context.
+    
+    Returns:
+        Tenant schema name or None if not set
+    """
+    return _current_tenant_schema.get()
+
+
+def get_tenant_id_from_context() -> Optional[uuid.UUID]:
+    """
+    Get the current tenant ID from context.
+    
+    Returns:
+        Tenant UUID or None if not set
+    """
+    return _current_tenant_id.get()
+

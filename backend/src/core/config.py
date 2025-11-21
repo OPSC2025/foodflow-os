@@ -116,6 +116,39 @@ class Settings(BaseSettings):
         description="Celery result backend URL",
     )
     
+    # AI Service
+    ai_service_url: str = Field(
+        default="http://localhost:8001",
+        description="AI service base URL",
+    )
+    ai_service_timeout_seconds: int = Field(
+        default=30,
+        description="AI service request timeout in seconds",
+    )
+    ai_service_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retries for AI service calls",
+    )
+    ai_service_retry_delay_seconds: float = Field(
+        default=1.0,
+        description="Initial delay between AI service retries (exponential backoff)",
+    )
+    
+    # Test Database
+    test_database_url: Optional[str] = Field(
+        default=None,
+        description="Test database URL (defaults to database_url with _test suffix)",
+    )
+    
+    @property
+    def get_test_database_url(self) -> str:
+        """Get test database URL, creating it from main URL if not specified."""
+        if self.test_database_url:
+            return self.test_database_url
+        # Replace database name with _test suffix
+        import re
+        return re.sub(r'/(\w+)$', r'/\1_test', self.database_url)
+    
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: Any) -> List[str]:

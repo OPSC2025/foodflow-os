@@ -19,10 +19,6 @@ from src.contexts.identity.domain.models import User, Role, Permission
 from src.core.security import hash_password, create_access_token
 
 
-# Test database URL
-TEST_DATABASE_URL = "postgresql+asyncpg://foodflow:foodflow@localhost:5432/foodflow_test"
-
-
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an event loop for the test session."""
@@ -34,8 +30,11 @@ def event_loop():
 @pytest_asyncio.fixture(scope="function")
 async def test_engine():
     """Create test database engine."""
+    settings = get_settings()
+    test_db_url = settings.get_test_database_url
+    
     engine = create_async_engine(
-        TEST_DATABASE_URL,
+        test_db_url,
         echo=False,
         future=True,
     )

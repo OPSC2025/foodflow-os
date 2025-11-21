@@ -11,8 +11,6 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from loguru import logger as loguru_logger
-
 
 class StructuredFormatter(logging.Formatter):
     """

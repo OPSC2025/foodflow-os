@@ -343,24 +343,51 @@ db_manager = DatabaseManager()
 
 
 # Convenience functions
-async def get_db_session(
-    tenant_schema: Optional[str] = None,
-) -> AsyncGenerator[AsyncSession, None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency function to get a database session.
+    
+    NOTE: This is the base session without tenant isolation.
+    For tenant-aware sessions, use get_tenant_db_session().
     
     Use this with FastAPI's Depends():
         @app.get("/items")
         async def get_items(db: AsyncSession = Depends(get_db_session)):
             ...
-    
-    Args:
-        tenant_schema: Optional tenant schema
         
     Yields:
         AsyncSession instance
     """
-    async with db_manager.get_session(tenant_schema=tenant_schema) as session:
+    async with db_manager.get_session() as session:
+        yield session
+
+
+async def get_tenant_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Dependency function to get a tenant-aware database session.
+    
+    Automatically extracts tenant schema from ContextVar and sets search_path.
+    MUST be used in combination with tenant_isolation_middleware.
+    
+    Use this with FastAPI's Depends():
+        @app.get("/items")
+        async def get_items(db: AsyncSession = Depends(get_tenant_db_session)):
+            ...
+        
+    Yields:
+        AsyncSession instance with tenant search_path set
+    """
+    from src.core.tenancy import get_tenant_from_context
+    
+    tenant_schema = get_tenant_from_context()
+    
+    async with db_manager.get_session() as session:
+        # Set search_path for tenant isolation
+        if tenant_schema:
+            await session.execute(
+                text(f"SET search_path TO {tenant_schema}, public")
+            )
+        
         yield session
 
 

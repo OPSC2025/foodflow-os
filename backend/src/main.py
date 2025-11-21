@@ -16,7 +16,7 @@ from src.contexts.plant_ops.api import batches, lines, sensors
 from src.contexts.identity.api import auth, tenants
 from src.core.config import settings
 from src.core.database import close_db, init_db, get_db_session
-from src.core.tenancy import set_tenant_context
+from src.core.tenancy import set_tenant_in_context
 from src.core.security import decode_token
 from src.core.errors import (
     DomainException,
@@ -180,12 +180,15 @@ async def tenant_isolation_middleware(request, call_next):
     """
     Middleware to enforce tenant isolation at the request level.
     
-    Extracts tenant information from JWT token and sets the database
-    search_path for the request.
+    Extracts tenant information from JWT token and sets it in ContextVar
+    for use by database sessions.
     """
-    # Skip middleware for health check and docs
+    # Skip middleware for public endpoints
     if request.url.path in ["/health", "/", "/api/docs", "/api/redoc", "/api/openapi.json"]:
         return await call_next(request)
+    
+    tenant_id = None
+    tenant_schema = None
     
     # Extract tenant from Authorization header
     auth_header = request.headers.get("authorization")
@@ -195,16 +198,26 @@ async def tenant_isolation_middleware(request, call_next):
             # Decode token to get tenant information
             token_payload = decode_token(token)
             tenant_schema = token_payload.tenant_schema
+            tenant_id = token_payload.tenant_id
             
-            # Store tenant info in request state
+            # Store tenant info in request state for convenience
             request.state.tenant_schema = tenant_schema
-            request.state.tenant_id = token_payload.tenant_id
+            request.state.tenant_id = tenant_id
+            
         except Exception:
             # Let the route handler deal with invalid tokens
+            logger.debug(f"Failed to decode token in tenant middleware")
             pass
     
-    response = await call_next(request)
-    return response
+    # Set tenant context for this request
+    set_tenant_in_context(tenant_id, tenant_schema)
+    
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        # Clean up context (important for connection pooling)
+        set_tenant_in_context(None, None)
 
 
 # Include routers
