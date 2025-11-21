@@ -13,12 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.contexts.plant_ops.domain.models import (
+    Downtime,
     LineEvent,
+    MoneyLeak,
     ProductionBatch,
     ProductionLine,
     ScrapEvent,
     Sensor,
     SensorReading,
+    Trial,
 )
 
 
@@ -610,3 +613,248 @@ class SensorReadingRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+
+class TrialRepository:
+    """Repository for Trial operations."""
+    
+    def __init__(self, session: AsyncSession, tenant_id: uuid.UUID):
+        self.session = session
+        self.tenant_id = tenant_id
+    
+    async def create(self, trial: Trial) -> Trial:
+        """Create a new trial."""
+        trial.tenant_id = self.tenant_id
+        self.session.add(trial)
+        await self.session.flush()
+        await self.session.refresh(trial)
+        return trial
+    
+    async def get_by_id(self, trial_id: uuid.UUID) -> Optional[Trial]:
+        """Get a trial by ID."""
+        stmt = select(Trial).where(
+            and_(
+                Trial.id == trial_id,
+                Trial.tenant_id == self.tenant_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def get_by_trial_number(self, trial_number: str) -> Optional[Trial]:
+        """Get a trial by trial number."""
+        stmt = select(Trial).where(
+            and_(
+                Trial.trial_number == trial_number,
+                Trial.tenant_id == self.tenant_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def list(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        line_id: Optional[uuid.UUID] = None,
+        status: Optional[str] = None,
+    ) -> list[Trial]:
+        """List trials with pagination and filters."""
+        stmt = select(Trial).where(Trial.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(Trial.line_id == line_id)
+        if status:
+            stmt = stmt.where(Trial.status == status)
+        
+        stmt = stmt.order_by(desc(Trial.created_at)).offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    async def count(
+        self,
+        line_id: Optional[uuid.UUID] = None,
+        status: Optional[str] = None,
+    ) -> int:
+        """Count trials matching filters."""
+        stmt = select(func.count()).select_from(Trial).where(Trial.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(Trial.line_id == line_id)
+        if status:
+            stmt = stmt.where(Trial.status == status)
+        
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+    
+    async def update(self, trial: Trial) -> Trial:
+        """Update a trial."""
+        await self.session.flush()
+        await self.session.refresh(trial)
+        return trial
+
+
+class DowntimeRepository:
+    """Repository for Downtime operations."""
+    
+    def __init__(self, session: AsyncSession, tenant_id: uuid.UUID):
+        self.session = session
+        self.tenant_id = tenant_id
+    
+    async def create(self, downtime: Downtime) -> Downtime:
+        """Create a new downtime record."""
+        downtime.tenant_id = self.tenant_id
+        self.session.add(downtime)
+        await self.session.flush()
+        await self.session.refresh(downtime)
+        return downtime
+    
+    async def get_by_id(self, downtime_id: uuid.UUID) -> Optional[Downtime]:
+        """Get a downtime record by ID."""
+        stmt = select(Downtime).where(
+            and_(
+                Downtime.id == downtime_id,
+                Downtime.tenant_id == self.tenant_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def list(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        line_id: Optional[uuid.UUID] = None,
+        is_planned: Optional[bool] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> list[Downtime]:
+        """List downtime records with pagination and filters."""
+        stmt = select(Downtime).where(Downtime.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(Downtime.line_id == line_id)
+        if is_planned is not None:
+            stmt = stmt.where(Downtime.is_planned == is_planned)
+        if start_time:
+            stmt = stmt.where(Downtime.start_time >= start_time)
+        if end_time:
+            stmt = stmt.where(Downtime.start_time <= end_time)
+        
+        stmt = stmt.order_by(desc(Downtime.start_time)).offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    async def count(
+        self,
+        line_id: Optional[uuid.UUID] = None,
+        is_planned: Optional[bool] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> int:
+        """Count downtime records matching filters."""
+        stmt = select(func.count()).select_from(Downtime).where(Downtime.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(Downtime.line_id == line_id)
+        if is_planned is not None:
+            stmt = stmt.where(Downtime.is_planned == is_planned)
+        if start_time:
+            stmt = stmt.where(Downtime.start_time >= start_time)
+        if end_time:
+            stmt = stmt.where(Downtime.start_time <= end_time)
+        
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+    
+    async def update(self, downtime: Downtime) -> Downtime:
+        """Update a downtime record."""
+        await self.session.flush()
+        await self.session.refresh(downtime)
+        return downtime
+
+
+class MoneyLeakRepository:
+    """Repository for MoneyLeak operations."""
+    
+    def __init__(self, session: AsyncSession, tenant_id: uuid.UUID):
+        self.session = session
+        self.tenant_id = tenant_id
+    
+    async def create(self, money_leak: MoneyLeak) -> MoneyLeak:
+        """Create a new money leak record."""
+        money_leak.tenant_id = self.tenant_id
+        self.session.add(money_leak)
+        await self.session.flush()
+        await self.session.refresh(money_leak)
+        return money_leak
+    
+    async def get_by_id(self, money_leak_id: uuid.UUID) -> Optional[MoneyLeak]:
+        """Get a money leak record by ID."""
+        stmt = select(MoneyLeak).where(
+            and_(
+                MoneyLeak.id == money_leak_id,
+                MoneyLeak.tenant_id == self.tenant_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def list(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        line_id: Optional[uuid.UUID] = None,
+        plant_id: Optional[uuid.UUID] = None,
+        category: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> list[MoneyLeak]:
+        """List money leak records with pagination and filters."""
+        stmt = select(MoneyLeak).where(MoneyLeak.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(MoneyLeak.line_id == line_id)
+        if plant_id:
+            stmt = stmt.where(MoneyLeak.plant_id == plant_id)
+        if category:
+            stmt = stmt.where(MoneyLeak.category == category)
+        if start_time:
+            stmt = stmt.where(MoneyLeak.period_start >= start_time)
+        if end_time:
+            stmt = stmt.where(MoneyLeak.period_start <= end_time)
+        
+        stmt = stmt.order_by(desc(MoneyLeak.period_start)).offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    async def count(
+        self,
+        line_id: Optional[uuid.UUID] = None,
+        plant_id: Optional[uuid.UUID] = None,
+        category: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> int:
+        """Count money leak records matching filters."""
+        stmt = select(func.count()).select_from(MoneyLeak).where(MoneyLeak.tenant_id == self.tenant_id)
+        
+        if line_id:
+            stmt = stmt.where(MoneyLeak.line_id == line_id)
+        if plant_id:
+            stmt = stmt.where(MoneyLeak.plant_id == plant_id)
+        if category:
+            stmt = stmt.where(MoneyLeak.category == category)
+        if start_time:
+            stmt = stmt.where(MoneyLeak.period_start >= start_time)
+        if end_time:
+            stmt = stmt.where(MoneyLeak.period_start <= end_time)
+        
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+    
+    async def update(self, money_leak: MoneyLeak) -> MoneyLeak:
+        """Update a money leak record."""
+        await self.session.flush()
+        await self.session.refresh(money_leak)
+        return money_leak

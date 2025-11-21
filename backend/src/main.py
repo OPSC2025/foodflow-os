@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.contexts.plant_ops.api import batches, lines, sensors
+from src.contexts.plant_ops import api as plant_ops_api
 from src.contexts.identity.api import auth, tenants
 from src.core.config import settings
 from src.core.database import close_db, init_db, get_db_session
@@ -225,10 +225,8 @@ async def tenant_isolation_middleware(request, call_next):
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(tenants.router, prefix="/api/v1", tags=["tenants"])
 
-# PlantOps
-app.include_router(lines.router, prefix="/api/v1/plant-ops", tags=["plant-ops"])
-app.include_router(batches.router, prefix="/api/v1/plant-ops", tags=["plant-ops"])
-app.include_router(sensors.router, prefix="/api/v1/plant-ops", tags=["plant-ops"])
+# PlantOps - consolidated router with all endpoints (overview, lines, batches, trials, downtimes, money_leaks, sensors)
+app.include_router(plant_ops_api.router, prefix="/api/v1/plant-ops", tags=["PlantOps"])
 
 
 # Exception handlers are now registered at the app level (see above)

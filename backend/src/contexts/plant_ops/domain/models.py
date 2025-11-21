@@ -443,3 +443,221 @@ class SensorReading(Base, UUIDPrimaryKeyMixin, TenantMixin):
     
     def __repr__(self) -> str:
         return f"<SensorReading(id={self.id}, sensor_id={self.sensor_id}, value={self.value})>"
+
+
+class TrialStatus(str, Enum):
+    """Trial status enum."""
+    
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class Trial(Base, UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin):
+    """
+    Trial model for tracking line trials.
+    
+    A trial is an experiment to test new parameters, products, or configurations on a line.
+    """
+    
+    __tablename__ = "trials"
+    
+    # Trial identification
+    trial_number: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Line and product
+    line_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("production_lines.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    product_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    product_code: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    
+    # Trial status
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default=TrialStatus.PLANNED, index=True)
+    
+    # Timing
+    planned_start_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    planned_end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    actual_start_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    actual_end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Trial parameters (stored as JSON text)
+    parameters: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: {speed: 120, temp: 180, ...}
+    
+    # Expected outcomes
+    expected_outcome: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    success_criteria: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: {min_oee: 85, max_scrap: 2, ...}
+    
+    # Actual results
+    results: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: {actual_oee: 87, actual_scrap: 1.5, ...}
+    was_successful: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    
+    # Associated batches
+    batch_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array of batch UUIDs
+    
+    # Observations and learnings
+    observations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    learnings: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    recommendations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Ownership
+    owner_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    owner_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    
+    # AI suggestion tracking
+    suggested_by_ai: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ai_suggestion_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    
+    # Metadata
+    metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON stored as text
+    
+    __table_args__ = (
+        Index("ix_trials_tenant_trial_number", "tenant_id", "trial_number", unique=True),
+        Index("ix_trials_line_status", "line_id", "status"),
+        Index("ix_trials_status_start", "tenant_id", "status", "actual_start_time"),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<Trial(id={self.id}, trial_number='{self.trial_number}', status='{self.status}')>"
+
+
+class Downtime(Base, UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin):
+    """
+    Downtime model for detailed downtime tracking.
+    
+    Records periods when a line is not producing due to various reasons.
+    """
+    
+    __tablename__ = "downtimes"
+    
+    # Line reference
+    line_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("production_lines.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    
+    # Batch reference (optional)
+    batch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("production_batches.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    
+    # Downtime period
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_minutes: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    
+    # Downtime classification
+    reason_category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)  # DowntimeReason enum value
+    reason_detail: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    is_planned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    
+    # Root cause and resolution
+    root_cause: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    resolution: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    preventive_action: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Impact
+    units_lost: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    cost_impact: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    
+    # Response tracking
+    reported_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    resolved_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    response_time_minutes: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    
+    # Metadata
+    metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON stored as text
+    
+    __table_args__ = (
+        Index("ix_downtimes_tenant_line_time", "tenant_id", "line_id", "start_time"),
+        Index("ix_downtimes_reason_time", "reason_category", "start_time"),
+        Index("ix_downtimes_is_planned", "tenant_id", "is_planned", "start_time"),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<Downtime(id={self.id}, line_id={self.line_id}, reason='{self.reason_category}', duration={self.duration_minutes})>"
+
+
+class MoneyLeakCategory(str, Enum):
+    """Money leak category enum."""
+    
+    SCRAP_LOSS = "scrap_loss"
+    DOWNTIME_LOSS = "downtime_loss"
+    SPEED_LOSS = "speed_loss"
+    YIELD_LOSS = "yield_loss"
+    QUALITY_LOSS = "quality_loss"
+    CHANGEOVER_LOSS = "changeover_loss"
+    STARTUP_LOSS = "startup_loss"
+
+
+class MoneyLeak(Base, UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin):
+    """
+    Money leak model for tracking financial losses.
+    
+    Calculates and tracks various types of production losses in dollar terms.
+    """
+    
+    __tablename__ = "money_leaks"
+    
+    # Time period
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    
+    # Scope
+    line_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("production_lines.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    plant_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    batch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("production_batches.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    
+    # Leak details
+    category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)  # MoneyLeakCategory enum value
+    subcategory: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    
+    # Financial impact
+    amount_usd: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    
+    # Calculation details
+    quantity_lost: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    unit_cost: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    time_lost_minutes: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    hourly_cost: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    
+    # Context
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    root_cause: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Action tracking
+    is_avoidable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    action_taken: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Metadata
+    calculation_method: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON stored as text
+    
+    __table_args__ = (
+        Index("ix_money_leaks_tenant_period", "tenant_id", "period_start", "period_end"),
+        Index("ix_money_leaks_category_period", "category", "period_start"),
+        Index("ix_money_leaks_line_period", "line_id", "period_start"),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<MoneyLeak(id={self.id}, category='{self.category}', amount=${self.amount_usd})>"

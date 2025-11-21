@@ -303,6 +303,184 @@ class SensorReadingResponse(SensorReadingBase):
     model_config = {"from_attributes": True}
 
 
+# Trial Schemas
+
+class TrialBase(BaseModel):
+    """Base schema for trial."""
+    
+    trial_number: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    line_id: uuid.UUID
+    product_id: Optional[uuid.UUID] = None
+    product_code: Optional[str] = None
+    planned_start_time: Optional[datetime] = None
+    planned_end_time: Optional[datetime] = None
+    parameters: Optional[dict] = None
+    expected_outcome: Optional[str] = None
+    success_criteria: Optional[dict] = None
+    owner_id: Optional[uuid.UUID] = None
+    owner_name: Optional[str] = None
+
+
+class TrialCreate(TrialBase):
+    """Schema for creating a trial."""
+    pass
+
+
+class TrialUpdate(BaseModel):
+    """Schema for updating a trial."""
+    
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    status: Optional[str] = None
+    actual_start_time: Optional[datetime] = None
+    actual_end_time: Optional[datetime] = None
+    parameters: Optional[dict] = None
+    results: Optional[dict] = None
+    was_successful: Optional[bool] = None
+    observations: Optional[str] = None
+    learnings: Optional[str] = None
+    recommendations: Optional[str] = None
+
+
+class TrialResponse(TrialBase):
+    """Schema for trial response."""
+    
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    status: str
+    actual_start_time: Optional[datetime] = None
+    actual_end_time: Optional[datetime] = None
+    results: Optional[dict] = None
+    was_successful: Optional[bool] = None
+    observations: Optional[str] = None
+    learnings: Optional[str] = None
+    recommendations: Optional[str] = None
+    batch_ids: Optional[list[uuid.UUID]] = None
+    suggested_by_ai: bool
+    ai_suggestion_id: Optional[uuid.UUID] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+
+# Downtime Schemas
+
+class DowntimeBase(BaseModel):
+    """Base schema for downtime."""
+    
+    line_id: uuid.UUID
+    batch_id: Optional[uuid.UUID] = None
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    reason_category: str
+    reason_detail: Optional[str] = None
+    is_planned: bool = False
+    root_cause: Optional[str] = None
+    resolution: Optional[str] = None
+    preventive_action: Optional[str] = None
+
+
+class DowntimeCreate(DowntimeBase):
+    """Schema for creating a downtime record."""
+    pass
+
+
+class DowntimeUpdate(BaseModel):
+    """Schema for updating a downtime record."""
+    
+    end_time: Optional[datetime] = None
+    duration_minutes: Optional[float] = None
+    reason_category: Optional[str] = None
+    reason_detail: Optional[str] = None
+    root_cause: Optional[str] = None
+    resolution: Optional[str] = None
+    preventive_action: Optional[str] = None
+    units_lost: Optional[float] = None
+    cost_impact: Optional[float] = None
+    resolved_by: Optional[str] = None
+    response_time_minutes: Optional[float] = None
+
+
+class DowntimeResponse(DowntimeBase):
+    """Schema for downtime response."""
+    
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    duration_minutes: Optional[float] = None
+    units_lost: Optional[float] = None
+    cost_impact: Optional[float] = None
+    reported_by: Optional[str] = None
+    resolved_by: Optional[str] = None
+    response_time_minutes: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+
+# Money Leak Schemas
+
+class MoneyLeakBase(BaseModel):
+    """Base schema for money leak."""
+    
+    period_start: datetime
+    period_end: datetime
+    line_id: Optional[uuid.UUID] = None
+    plant_id: Optional[uuid.UUID] = None
+    batch_id: Optional[uuid.UUID] = None
+    category: str
+    subcategory: Optional[str] = None
+    amount_usd: float = Field(..., ge=0)
+    quantity_lost: Optional[float] = None
+    unit_cost: Optional[float] = None
+    time_lost_minutes: Optional[float] = None
+    hourly_cost: Optional[float] = None
+    description: Optional[str] = None
+    root_cause: Optional[str] = None
+    is_avoidable: bool = True
+    action_taken: Optional[str] = None
+
+
+class MoneyLeakCreate(MoneyLeakBase):
+    """Schema for creating a money leak record."""
+    pass
+
+
+class MoneyLeakResponse(MoneyLeakBase):
+    """Schema for money leak response."""
+    
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    calculation_method: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+
+class MoneyLeakSummary(BaseModel):
+    """Schema for money leak summary by category."""
+    
+    category: str
+    total_amount_usd: float
+    count: int
+    average_amount_usd: float
+    percentage_of_total: float
+
+
+class MoneyLeakOverview(BaseModel):
+    """Schema for money leak overview."""
+    
+    period_start: datetime
+    period_end: datetime
+    total_amount_usd: float
+    by_category: list[MoneyLeakSummary]
+    top_lines: list[dict]  # List of {line_id, line_number, total_amount}
+
+
 # Analytics and Metrics Schemas
 
 class LineMetrics(BaseModel):
@@ -401,3 +579,42 @@ class PaginatedResponse(BaseModel):
             import math
             return math.ceil(info.data["total"] / info.data["page_size"])
         return v
+
+
+# PlantOps Overview Schemas
+
+class PlantOpsKPI(BaseModel):
+    """Schema for key performance indicators."""
+    
+    total_lines: int
+    active_lines: int
+    running_batches: int
+    average_oee: float
+    total_scrap_cost_today: float
+    total_downtime_minutes_today: float
+
+
+class PlantOpsAlert(BaseModel):
+    """Schema for alerts."""
+    
+    id: uuid.UUID
+    severity: str  # low, medium, high, critical
+    type: str  # scrap_spike, downtime, quality_issue, sensor_anomaly
+    title: str
+    description: str
+    line_id: Optional[uuid.UUID] = None
+    line_number: Optional[str] = None
+    timestamp: datetime
+    is_acknowledged: bool = False
+
+
+class PlantOpsOverview(BaseModel):
+    """Schema for PlantOps workspace overview."""
+    
+    period_start: datetime
+    period_end: datetime
+    kpis: PlantOpsKPI
+    money_leaks: MoneyLeakOverview
+    alerts: list[PlantOpsAlert]
+    active_trials: int
+    recent_scrap_events: int
