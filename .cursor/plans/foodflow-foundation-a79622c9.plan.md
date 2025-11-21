@@ -45,10 +45,10 @@ Complete the Identity bounded context:
 - Create migration for PlantOps tables (expand existing models)
 - Create migration for AI telemetry tables (CopilotInteraction, AI_Suggestion, AI_Feedback)
 - Create seed script for development data:
-                                                                - 2 demo tenants with schemas (one for Akron facility)
-                                                                - Sample users (admin, operator, fsq_manager)
-                                                                - Sample plants, lines, batches for Akron
-                                                                - Sample FSQ data (lots, deviations)
+                                                                                                                                - 2 demo tenants with schemas (one for Akron facility)
+                                                                                                                                - Sample users (admin, operator, fsq_manager)
+                                                                                                                                - Sample plants, lines, batches for Akron
+                                                                                                                                - Sample FSQ data (lots, deviations)
 - Add `scripts/reset_dev_db.sh` for clean dev environment
 
 ### 1.4 Core API Structure & Error Handling
@@ -72,23 +72,23 @@ Establish consistent API patterns:
 Create telemetry models and service:
 
 - **CopilotInteraction** model:
-                                                                - tenant_id, user_id, workspace, question, answer
-                                                                - tools_used (JSON array), tokens_used, duration_ms
-                                                                - feedback_score, feedback_comment
-                                                                - created_at, metadata (JSON)
+                                                                                                                                - tenant_id, user_id, workspace, question, answer
+                                                                                                                                - tools_used (JSON array), tokens_used, duration_ms
+                                                                                                                                - feedback_score, feedback_comment
+                                                                                                                                - created_at, metadata (JSON)
 - **AI_Suggestion** model:
-                                                                - tenant_id, user_id, suggestion_type, payload (JSON)
-                                                                - applied_flag, applied_at, applied_by
-                                                                - before_metrics (JSON), after_metrics (JSON)
-                                                                - created_at
+                                                                                                                                - tenant_id, user_id, suggestion_type, payload (JSON)
+                                                                                                                                - applied_flag, applied_at, applied_by
+                                                                                                                                - before_metrics (JSON), after_metrics (JSON)
+                                                                                                                                - created_at
 - **AI_Feedback** model:
-                                                                - interaction_id, thumbs_up/down, comment, created_at
+                                                                                                                                - interaction_id, thumbs_up/down, comment, created_at
 - **TelemetryService** class:
-                                                                - `log_interaction()` - log Copilot interactions
-                                                                - `log_suggestion()` - log AI suggestions
-                                                                - `record_feedback()` - capture user feedback
-                                                                - `get_workspace_analytics()` - analytics per workspace
-                                                                - `get_acceptance_rate()` - suggestion acceptance metrics
+                                                                                                                                - `log_interaction()` - log Copilot interactions
+                                                                                                                                - `log_suggestion()` - log AI suggestions
+                                                                                                                                - `record_feedback()` - capture user feedback
+                                                                                                                                - `get_workspace_analytics()` - analytics per workspace
+                                                                                                                                - `get_acceptance_rate()` - suggestion acceptance metrics
 
 **Why now**: This data is GOLD for tuning prompts, measuring ROI, and convincing investors/auditors.
 
@@ -99,14 +99,14 @@ Create telemetry models and service:
 - Configure pytest with async support
 - Create test database setup (use testcontainers or separate DB)
 - Add fixtures for:
-                                                                - Test client with authentication
-                                                                - Sample tenants and users
-                                                                - Sample domain data (plants, lines, batches, lots)
-                                                                - Mock AI service responses
+                                                                                                                                - Test client with authentication
+                                                                                                                                - Sample tenants and users
+                                                                                                                                - Sample domain data (plants, lines, batches, lots)
+                                                                                                                                - Mock AI service responses
 - Create base test classes for:
-                                                                - Unit tests (service layer)
-                                                                - Integration tests (API endpoints)
-                                                                - Repository tests (database access)
+                                                                                                                                - Unit tests (service layer)
+                                                                                                                                - Integration tests (API endpoints)
+                                                                                                                                - Repository tests (database access)
 - Set coverage target: 80% for services, 70% overall
 
 ## Phase 2: AI Service Architecture (Week 1-2)
@@ -130,17 +130,17 @@ Create the AI service skeleton:
 Implement PlantOps AI endpoints as stubs:
 
 - `POST /plantops/analyze-scrap` - analyze line scrap patterns
-                                                                - Request: tenant_id, plant_id, line_id, date_range
-                                                                - Response: scrap_analysis (top_reasons, trend, recommendations)
+                                                                                                                                - Request: tenant_id, plant_id, line_id, date_range
+                                                                                                                                - Response: scrap_analysis (top_reasons, trend, recommendations)
 - `POST /plantops/suggest-trial` - suggest line trial parameters
-                                                                - Request: tenant_id, line_id, sku_id, context
-                                                                - Response: trial_suggestion (parameters, expected_outcome, risks)
+                                                                                                                                - Request: tenant_id, line_id, sku_id, context
+                                                                                                                                - Response: trial_suggestion (parameters, expected_outcome, risks)
 - `POST /plantops/compare-batch` - compare batch to historical
-                                                                - Request: tenant_id, batch_id
-                                                                - Response: comparison (similar_batches, deviations, insights)
+                                                                                                                                - Request: tenant_id, batch_id
+                                                                                                                                - Response: comparison (similar_batches, deviations, insights)
 - `POST /plantops/compute-line-efficiency` - calculate OEE and money leaks
-                                                                - Request: tenant_id, line_id, date_range
-                                                                - Response: oee_metrics, downtime_breakdown, money_leaks
+                                                                                                                                - Request: tenant_id, line_id, date_range
+                                                                                                                                - Response: oee_metrics, downtime_breakdown, money_leaks
 
 All return realistic mock data with proper schemas.
 
@@ -151,21 +151,21 @@ All return realistic mock data with proper schemas.
 Implement FSQ AI endpoints as stubs:
 
 - `POST /fsq/compute-lot-risk` - calculate lot risk score
-                                                                - Request: tenant_id, lot_id
-                                                                - Response: risk_score, risk_factors, affected_products
+                                                                                                                                - Request: tenant_id, lot_id
+                                                                                                                                - Response: risk_score, risk_factors, affected_products
 - `POST /fsq/compute-supplier-risk` - calculate supplier risk
-                                                                - Request: tenant_id, supplier_id
-                                                                - Response: risk_score, risk_factors, history
+                                                                                                                                - Request: tenant_id, supplier_id
+                                                                                                                                - Response: risk_score, risk_factors, history
 - `POST /fsq/ccp-drift-summary` - summarize CCP drift
-                                                                - Request: tenant_id, plant_id, date_range
-                                                                - Response: ccp_drifts (sensor, deviation_count, severity)
+                                                                                                                                - Request: tenant_id, plant_id, date_range
+                                                                                                                                - Response: ccp_drifts (sensor, deviation_count, severity)
 - `POST /fsq/run-mock-recall` - simulate recall scenario
-                                                                - Request: tenant_id, scope (lot_id, ingredient_id, supplier_id)
-                                                                - Response: affected_products, affected_locations, estimated_impact
+                                                                                                                                - Request: tenant_id, scope (lot_id, ingredient_id, supplier_id)
+                                                                                                                                - Response: affected_products, affected_locations, estimated_impact
 - `POST /fsq/answer-compliance-question` - answer FSQ/compliance questions
-                                                                - Request: tenant_id, question, context (doc_ids, lot_ids)
-                                                                - Response: answer, confidence, sources (doc references)
-                                                                - **Note**: Designed for RAG - stub returns generic answer now
+                                                                                                                                - Request: tenant_id, question, context (doc_ids, lot_ids)
+                                                                                                                                - Response: answer, confidence, sources (doc references)
+                                                                                                                                - **Note**: Designed for RAG - stub returns generic answer now
 
 ### 2.4 AI Contracts - Planning Module
 
@@ -174,14 +174,14 @@ Implement FSQ AI endpoints as stubs:
 Implement Planning AI endpoints as stubs:
 
 - `POST /planning/generate-forecast` - generate demand forecast
-                                                                - Request: tenant_id, horizon_weeks, grouping (sku, category, plant)
-                                                                - Response: forecast_version_id, points (sku, date, baseline, p10, p90)
+                                                                                                                                - Request: tenant_id, horizon_weeks, grouping (sku, category, plant)
+                                                                                                                                - Response: forecast_version_id, points (sku, date, baseline, p10, p90)
 - `POST /planning/generate-production-plan` - generate production plan
-                                                                - Request: tenant_id, forecast_version_id, horizon, plants, constraints
-                                                                - Response: plan_id, schedule (plant, line, sku, date, quantity)
+                                                                                                                                - Request: tenant_id, forecast_version_id, horizon, plants, constraints
+                                                                                                                                - Response: plan_id, schedule (plant, line, sku, date, quantity)
 - `POST /planning/recommend-safety-stocks` - recommend safety stock levels
-                                                                - Request: tenant_id, sku_ids, location_ids
-                                                                - Response: recommendations (sku, location, safety_stock, reasoning)
+                                                                                                                                - Request: tenant_id, sku_ids, location_ids
+                                                                                                                                - Response: recommendations (sku, location, safety_stock, reasoning)
 
 ### 2.5 AI Contracts - Brand & Retail Modules
 
@@ -194,7 +194,7 @@ Implement Brand AI endpoints:
 - `POST /brand/optimize-allocation` - optimize volume allocation
 - `POST /brand/rank-npi-sites` - rank sites for new product intro
 - `POST /brand/answer-brand-question` - answer brand/product questions
-                                                                - **Note**: Designed for RAG over brand docs, contracts
+                                                                                                                                - **Note**: Designed for RAG over brand docs, contracts
 
 Implement Retail AI endpoints:
 
@@ -248,12 +248,12 @@ Complete the PlantOps bounded context (expand existing work):
 - **Models**: Plant, Line, Batch, ScrapLog, Trial, Downtime, MoneyLeak
 - **Schemas**: Pydantic models for all entities
 - **Services**: 
-                                                                - Plant & line management
-                                                                - Batch lifecycle (create, start, complete)
-                                                                - Scrap logging and analysis
-                                                                - Trial execution and tracking
-                                                                - Money leak calculation (scrap cost, downtime cost, yield loss)
-                                                                - Line efficiency metrics (OEE, availability, performance, quality)
+                                                                                                                                - Plant & line management
+                                                                                                                                - Batch lifecycle (create, start, complete)
+                                                                                                                                - Scrap logging and analysis
+                                                                                                                                - Trial execution and tracking
+                                                                                                                                - Money leak calculation (scrap cost, downtime cost, yield loss)
+                                                                                                                                - Line efficiency metrics (OEE, availability, performance, quality)
 - **API**: REST endpoints for PlantOps operations
 - **Events**: BatchStartedEvent, BatchCompletedEvent, ScrapDetectedEvent, TrialCompletedEvent
 
@@ -291,11 +291,11 @@ Implement the FSQ bounded context:
 - **Models**: Lot, Deviation, CAPA, HACCP_Plan, CCP_Log, Supplier, Ingredient, Document
 - **Schemas**: Pydantic models for requests/responses
 - **Services**: 
-                                                                - Lot management and traceability
-                                                                - Deviation reporting and CAPA lifecycle
-                                                                - CCP monitoring
-                                                                - Supplier management
-                                                                - **Document ingestion pipeline** (prepare for RAG)
+                                                                                                                                - Lot management and traceability
+                                                                                                                                - Deviation reporting and CAPA lifecycle
+                                                                                                                                - CCP monitoring
+                                                                                                                                - Supplier management
+                                                                                                                                - **Document ingestion pipeline** (prepare for RAG)
 - **API**: REST endpoints for FSQ operations
 - **Events**: DeviationCreatedEvent, CAPACompletedEvent, CCPViolationEvent, DocumentUploadedEvent
 
@@ -311,9 +311,9 @@ Key endpoints:
 - `POST /api/v1/fsq/suppliers` - create supplier
 - `GET /api/v1/fsq/suppliers` - list suppliers
 - **`POST /api/v1/fsq/documents/upload`** - upload FSQ document (QAI/QMS/SQF)
-                                                                - Stores document metadata in DB
-                                                                - Uploads file to object storage (S3/MinIO)
-                                                                - Queues for future RAG indexing (stub for now)
+                                                                                                                                - Stores document metadata in DB
+                                                                                                                                - Uploads file to object storage (S3/MinIO)
+                                                                                                                                - Queues for future RAG indexing (stub for now)
 - `GET /api/v1/fsq/documents` - list documents
 
 **RAG Hook Points**:
@@ -353,10 +353,10 @@ Implement the Brand bounded context:
 - **Models**: Brand, Product, SKU, Copacker, CopackerContract, BrandPerformance, BrandDocument
 - **Schemas**: Pydantic models for brand data
 - **Services**: 
-                                                                - Brand and product management
-                                                                - Co-packer evaluation
-                                                                - Margin analysis
-                                                                - **Document ingestion for brand contracts** (prepare for RAG)
+                                                                                                                                - Brand and product management
+                                                                                                                                - Co-packer evaluation
+                                                                                                                                - Margin analysis
+                                                                                                                                - **Document ingestion for brand contracts** (prepare for RAG)
 - **API**: REST endpoints for brand operations
 - **Events**: ProductLaunchedEvent, CopackerRatedEvent, ContractUploadedEvent
 
@@ -368,8 +368,8 @@ Key endpoints:
 - `GET /api/v1/brand/copackers/{id}/performance` - co-packer performance
 - `POST /api/v1/brand/margin-bridge` - margin analysis (calls AI service)
 - **`POST /api/v1/brand/documents/upload`** - upload brand document (contracts, specs)
-                                                                - Similar to FSQ document upload
-                                                                - Queued for future RAG indexing
+                                                                                                                                - Similar to FSQ document upload
+                                                                                                                                - Queued for future RAG indexing
 - `GET /api/v1/brand/documents` - list brand documents
 
 **RAG Hook Points**:
@@ -509,21 +509,21 @@ Each tool:
 Create RAG infrastructure (initially stubbed, designed for future activation):
 
 - **Document ingestion service**:
-                                                                - Endpoint: `POST /api/v1/rag/ingest` (internal, called by document upload handlers)
-                                                                - Receives: document_id, tenant_id, content, metadata
-                                                                - Stub behavior: logs document, returns success
-                                                                - Future: chunk document, generate embeddings, store in pgvector
+                                                                                                                                - Endpoint: `POST /api/v1/rag/ingest` (internal, called by document upload handlers)
+                                                                                                                                - Receives: document_id, tenant_id, content, metadata
+                                                                                                                                - Stub behavior: logs document, returns success
+                                                                                                                                - Future: chunk document, generate embeddings, store in pgvector
 - **Semantic search service**:
-                                                                - Endpoint: `POST /api/v1/rag/search` (internal, called by Copilot tools)
-                                                                - Receives: tenant_id, query, context, top_k
-                                                                - Stub behavior: returns empty results
-                                                                - Future: embed query, vector search, return relevant chunks with sources
+                                                                                                                                - Endpoint: `POST /api/v1/rag/search` (internal, called by Copilot tools)
+                                                                                                                                - Receives: tenant_id, query, context, top_k
+                                                                                                                                - Stub behavior: returns empty results
+                                                                                                                                - Future: embed query, vector search, return relevant chunks with sources
 - **pgvector schema**:
-                                                                - Table: `document_embeddings` (tenant_id, document_id, chunk_index, embedding, content, metadata)
-                                                                - Indexes created but not populated
+                                                                                                                                - Table: `document_embeddings` (tenant_id, document_id, chunk_index, embedding, content, metadata)
+                                                                                                                                - Indexes created but not populated
 - **Document chunking logic** (commented, not executed):
-                                                                - Chunk size, overlap, splitting strategy documented
-                                                                - Embedding model specified (text-embedding-3-small)
+                                                                                                                                - Chunk size, overlap, splitting strategy documented
+                                                                                                                                - Embedding model specified (text-embedding-3-small)
 
 **FSQ & Brand RAG Integration**:
 
@@ -546,7 +546,7 @@ Implement telemetry service with rich APIs:
 - `record_suggestion_outcome(suggestion_id, applied_flag, applied_by, before_metrics, after_metrics)` - record if suggestion was applied and results
 - `record_feedback(interaction_id, thumbs_up_down, comment)` - capture user feedback
 - `get_workspace_analytics(tenant_id, workspace, date_range)` - get analytics per workspace
-                                                                - Total interactions, avg response time, tools usage distribution
+                                                                                                                                - Total interactions, avg response time, tools usage distribution
 - `get_suggestion_acceptance_rate(tenant_id, suggestion_type, date_range)` - acceptance rate metrics
 - `get_tool_usage_stats(tenant_id, date_range)` - which tools are most used
 - `get_user_engagement(tenant_id, date_range)` - which users engage with Copilot most
@@ -567,19 +567,19 @@ Implement telemetry service with rich APIs:
 Create CI/CD pipelines:
 
 - `ci-backend.yml` - Backend linting, type checking, tests
-                                                                - Run on PR to main
-                                                                - Ruff linting, mypy type checking
-                                                                - pytest with coverage report (fail if <70%)
-                                                                - Build Docker image
+                                                                                                                                - Run on PR to main
+                                                                                                                                - Ruff linting, mypy type checking
+                                                                                                                                - pytest with coverage report (fail if <70%)
+                                                                                                                                - Build Docker image
 - `ci-ai-service.yml` - AI service linting and tests
-                                                                - Same pattern as backend
+                                                                                                                                - Same pattern as backend
 - `cd-staging.yml` - Deploy to staging on merge to main
-                                                                - Build and push Docker images
-                                                                - Deploy to K8s staging namespace
-                                                                - Run smoke tests
+                                                                                                                                - Build and push Docker images
+                                                                                                                                - Deploy to K8s staging namespace
+                                                                                                                                - Run smoke tests
 - `cd-production.yml` - Deploy to production on tag
-                                                                - Manual approval step
-                                                                - Deploy to K8s production namespace
+                                                                                                                                - Manual approval step
+                                                                                                                                - Deploy to K8s production namespace
 
 ### 5.2 Pre-commit Hooks
 
