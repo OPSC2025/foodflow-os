@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.contexts.plant_ops import api as plant_ops_api
+from src.contexts.fsq.api import router as fsq_router
 from src.contexts.identity.api import auth, tenants
 from src.core.config import settings
 from src.core.database import close_db, init_db, get_db_session
@@ -227,6 +228,9 @@ app.include_router(tenants.router, prefix="/api/v1", tags=["tenants"])
 
 # PlantOps - consolidated router with all endpoints (overview, lines, batches, trials, downtimes, money_leaks, sensors)
 app.include_router(plant_ops_api.router, prefix="/api/v1/plant-ops", tags=["PlantOps"])
+
+# FSQ - Food Safety & Quality (lots, suppliers, deviations, CAPAs, documents)
+app.include_router(fsq_router)
 
 
 # Exception handlers are now registered at the app level (see above)
