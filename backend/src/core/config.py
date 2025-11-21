@@ -78,12 +78,30 @@ class Settings(BaseSettings):
     event_bus_enabled: bool = True
     event_bus_poll_interval: int = 5  # seconds
     
-    # AI/ML
+    # AI/ML - OpenAI
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key for LLM")
     openai_model: str = "gpt-4-turbo-preview"
     openai_embedding_model: str = "text-embedding-3-small"
-    openai_temperature: float = 0.1
-    openai_max_tokens: int = 2000
+    openai_temperature: float = 0.7
+    openai_max_tokens: int = 4000
+    
+    # Copilot Configuration
+    copilot_conversation_history_limit: int = Field(
+        default=10,
+        description="Maximum number of messages to keep in conversation context",
+    )
+    copilot_max_tool_retries: int = Field(
+        default=2,
+        description="Maximum retries for failed tool executions",
+    )
+    copilot_timeout_seconds: float = Field(
+        default=60.0,
+        description="Maximum time for Copilot response generation",
+    )
+    copilot_max_tool_iterations: int = Field(
+        default=5,
+        description="Maximum number of tool calling iterations per request",
+    )
     
     # Feature Store
     feature_store_enabled: bool = True

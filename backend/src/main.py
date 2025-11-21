@@ -18,6 +18,7 @@ from src.contexts.planning.api import router as planning_router
 from src.contexts.brand.api import router as brand_router
 from src.contexts.retail.api import router as retail_router
 from src.contexts.identity.api import auth, tenants
+from src.ai_orchestrator.api import router as copilot_router
 from src.core.config import settings
 from src.core.database import close_db, init_db, get_db_session
 from src.core.tenancy import set_tenant_in_context
@@ -228,6 +229,9 @@ async def tenant_isolation_middleware(request, call_next):
 # Identity & Tenancy
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(tenants.router, prefix="/api/v1", tags=["tenants"])
+
+# AI Copilot - LLM-powered AI assistant for all workspaces
+app.include_router(copilot_router, prefix="/api/v1", tags=["Copilot"])
 
 # PlantOps - consolidated router with all endpoints (overview, lines, batches, trials, downtimes, money_leaks, sensors)
 app.include_router(plant_ops_api.router, prefix="/api/v1/plant-ops", tags=["PlantOps"])

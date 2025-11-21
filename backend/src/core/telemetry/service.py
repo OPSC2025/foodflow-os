@@ -40,6 +40,7 @@ class TelemetryService:
         tools_used: Optional[list[str]] = None,
         tokens_used: Optional[int] = None,
         duration_ms: Optional[int] = None,
+        conversation_id: Optional[uuid.UUID] = None,
         metadata: Optional[dict] = None,
     ) -> CopilotInteraction:
         """
@@ -71,6 +72,7 @@ class TelemetryService:
             tools_used=tools_used or [],
             tokens_used=tokens_used,
             duration_ms=duration_ms,
+            conversation_id=conversation_id,
             metadata=metadata or {},
         )
         
@@ -79,6 +81,47 @@ class TelemetryService:
         await self.session.refresh(interaction)
         
         return interaction
+    
+    async def record_copilot_feedback(
+        self,
+        conversation_id: uuid.UUID,
+        rating: int,
+        feedback_text: Optional[str] = None,
+    ) -> dict:
+        """
+        Record feedback for a Copilot conversation.
+        
+        This method finds the most recent interaction in the conversation
+        and records feedback for it.
+        
+        Args:
+            conversation_id: Conversation ID
+            rating: Rating 1-5
+            feedback_text: Optional feedback text
+            
+        Returns:
+            Status dict
+        """
+        # Find most recent interaction for this conversation
+        result = await self.session.execute(
+            select(CopilotInteraction)
+            .where(CopilotInteraction.conversation_id == conversation_id)
+            .order_by(CopilotInteraction.created_at.desc())
+            .limit(1)
+        )
+        interaction = result.scalar_one_or_none()
+        
+        if not interaction:
+            return {"status": "error", "message": "No interaction found for conversation"}
+        
+        # Update interaction with feedback
+        interaction.feedback_score = rating
+        interaction.feedback_comment = feedback_text
+        interaction.feedback_at = datetime.utcnow()
+        
+        await self.session.commit()
+        
+        return {"status": "success", "interaction_id": str(interaction.id)}
     
     async def log_ai_suggestion(
         self,
