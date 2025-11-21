@@ -2,24 +2,44 @@
 source = src
 omit =
     */tests/*
-    */migrations/*
+    */test_*.py
     */__pycache__/*
     */site-packages/*
     */venv/*
-    */.venv/*
+    */alembic/versions/*
+    */main.py
 
 [report]
-precision = 2
-skip_empty = True
+# Regexes for lines to exclude from consideration
 exclude_lines =
+    # Have to re-enable the standard pragma
     pragma: no cover
+
+    # Don't complain about missing debug-only code:
     def __repr__
+    if self\.debug
+
+    # Don't complain if tests don't hit defensive assertion code:
     raise AssertionError
     raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
     if __name__ == .__main__.:
+
+    # Don't complain about abstract methods:
+    @(abc\.)?abstractmethod
+
+    # Type checking blocks
     if TYPE_CHECKING:
-    @abstractmethod
+    if typing.TYPE_CHECKING:
+
+ignore_errors = True
 
 [html]
 directory = htmlcov
 
+[paths]
+source =
+    src/
+    backend/src/
