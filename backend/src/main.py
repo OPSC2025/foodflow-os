@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from src.contexts.plant_ops import api as plant_ops_api
 from src.contexts.fsq.api import router as fsq_router
+from src.contexts.planning.api import router as planning_router
 from src.contexts.identity.api import auth, tenants
 from src.core.config import settings
 from src.core.database import close_db, init_db, get_db_session
@@ -231,6 +232,9 @@ app.include_router(plant_ops_api.router, prefix="/api/v1/plant-ops", tags=["Plan
 
 # FSQ - Food Safety & Quality (lots, suppliers, deviations, CAPAs, documents)
 app.include_router(fsq_router)
+
+# Planning - Demand Forecasting, Production Planning, Safety Stocks, Inventory
+app.include_router(planning_router)
 
 
 # Exception handlers are now registered at the app level (see above)
